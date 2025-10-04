@@ -25,7 +25,3 @@ El objetivo principal es **recolectar los 7 anillos** mientras se esquivan obst�
 - Los **efectos visuales** (brillos, partículas y luces) pueden afectar el rendimiento en computadoras lentas.  
 - Es un **juego infinito**, por lo que el puntaje es el objetivo principal.
 
----
-
-## 🧠 Tecnologías
-Desarrollado con **Python 3** y **Pygame**.
