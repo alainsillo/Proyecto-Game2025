@@ -8,6 +8,13 @@ class Player:
         self.rect = self.image.get_rect()
         self.rect.x = 100
         self.rect.y = 480  # Posición inicial más baja
+        # Flamas del jetpack
+        self.flame_frames = []
+        self.flame_index = 0
+        self.flame_timer = 0
+        self.flame_interval = 6
+        self.flame_active = False
+        self._load_flames()
         self.vel_y = 0
         self.is_jumping = False
         self.gravity = 0.4  # Gravedad más lenta
@@ -59,9 +66,11 @@ class Player:
             self.is_jumping = False
             # Mostrar sprite de reposo en el suelo
             self.image = self.image_up
+            self.flame_active = False
         else:
             # Mostrar sprite de vuelo cuando está en el aire
             self.image = self.image_fly
+            self.flame_active = True
 
         # Iniciar salto cuando se presiona espacio y está en el suelo
         if not self.is_jumping and space_pressed:
@@ -78,7 +87,21 @@ class Player:
         # Guardar estado de la tecla para el siguiente frame
         self.space_pressed_last_frame = space_pressed
 
+        # Animación de flamas
+        if self.flame_active and self.flame_frames:
+            self.flame_timer += 1
+            if self.flame_timer >= self.flame_interval:
+                self.flame_timer = 0
+                self.flame_index = (self.flame_index + 1) % len(self.flame_frames)
+
     def draw(self, screen):
+        # Dibujar flamas debajo del jetpack cuando está en el aire
+        if self.flame_active and self.flame_frames:
+            flame = self.flame_frames[self.flame_index]
+            flame_x = self.rect.centerx - flame.get_width() // 2
+            flame_y = self.rect.bottom - 5
+            screen.blit(flame, (flame_x, flame_y))
+
         screen.blit(self.image, self.rect)
 
     def die(self):
@@ -92,6 +115,7 @@ class Player:
             self.dead = True
             # Asegurar que comience a caer hacia abajo
             self.vel_y = 2
+            self.flame_active = False
 
     def reset(self):
         self.rect.y = self.ground_y
@@ -101,6 +125,9 @@ class Player:
         # Volver al sprite vivo
         self.image = self.image_up
         self.dead = False
+        self.flame_active = False
+        self.flame_index = 0
+        self.flame_timer = 0
 
     def _load_skin(self, skin_key: str):
         """Cargar sprites según el skin seleccionado."""
@@ -120,6 +147,17 @@ class Player:
         except Exception:
             self.image_dead = None
         self.image = self.image_up
+
+    def _load_flames(self):
+        """Cargar sprites de flamas del jetpack."""
+        try:
+            f1 = pygame.image.load("assets/images/FlyFire.png").convert_alpha()
+            f2 = pygame.image.load("assets/images/FlyFire2.png").convert_alpha()
+            f1 = pygame.transform.scale(f1, (30, 30))
+            f2 = pygame.transform.scale(f2, (30, 30))
+            self.flame_frames = [f1, f2]
+        except Exception:
+            self.flame_frames = []
 
     def set_skin(self, skin_key: str):
         """Aplicar un skin (cambia sprites al vuelo)."""

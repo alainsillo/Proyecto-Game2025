@@ -26,8 +26,8 @@ class Shop:
         self.skins = [
             Skin("Ariana Original", 0, "original", True),  # Gratis y desbloqueado por defecto
             Skin("Dangerous Woman", 500, "dangerous_woman"),
-            Skin("Ariana Pink", 750, "pink"),
-            Skin("Ariana Diamond", 1000, "diamond"),
+            Skin("Próximamente", 750, "pink"),
+            Skin("Próximamente", 1000, "diamond"),
         ]
         
         # Cargar dinero del jugador desde la BD
