@@ -6,6 +6,8 @@ from modules.heart import Heart
 from modules.game_manager import GameManager
 from modules.ui import draw_ui
 from modules import db
+from modules.menu import Menu, MenuState
+from modules.shop import Shop
 
 # Inicializar pygame
 pygame.init()
@@ -13,6 +15,13 @@ WIDTH, HEIGHT = 800, 600
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("7 Rings Run ")
 clock = pygame.time.Clock()
+
+# Cargar y establecer logo como icono de ventana
+try:
+    logo = pygame.image.load("assets/images/LOGO_7RINGS_RUN.png")
+    pygame.display.set_icon(logo)
+except Exception:
+    pass
 
 # Colores y fondo
 PINK = (255, 182, 193)
@@ -45,10 +54,13 @@ except Exception:
     except Exception:
         font = pygame.font.SysFont("arial", 24)
 
-# Player name / DB id
-player_name = ""
+# Player DB id
 player_id = None
-enter_name_mode = True
+
+# Menú y tienda
+menu = Menu(WIDTH, HEIGHT)
+shop = Shop(WIDTH, HEIGHT)
+current_state = MenuState.MAIN_MENU
 
 # Musica
 pygame.mixer.music.load("assets/sounds/music.mp3")
@@ -71,46 +83,52 @@ power_image_fade_duration = 120  # 2 segundos a 60 FPS
 running = True
 while running:
     clock.tick(60)
+    mouse_pos = pygame.mouse.get_pos()
+    mouse_pressed = pygame.mouse.get_pressed()[0]
+    
     # Eventos
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
-        # Name entry handling
-        if enter_name_mode and event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_BACKSPACE:
-                player_name = player_name[:-1]
-            elif event.key == pygame.K_RETURN or event.key == pygame.K_KP_ENTER:
-                # Finalizar entrada de nombre
-                name = player_name.strip() or "Player"
-                try:
-                    player_id = db.add_player(name)
-                except Exception:
-                    player_id = None
-                enter_name_mode = False
-            else:
-                # Añadir carácter si es imprimible
-                ch = event.unicode
-                if ch.isprintable() and len(player_name) < 12:
-                    player_name += ch
+        
+        # Manejar menú principal
+        if current_state == MenuState.MAIN_MENU:
+            new_state = menu.handle_events([event], mouse_pos, mouse_pressed)
+            if new_state != current_state:
+                current_state = new_state
+        
+        # Manejar tienda
+        elif current_state == MenuState.SHOP:
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                current_state = MenuState.MAIN_MENU
 
     # Entradas
     keys = pygame.key.get_pressed()
     space_pressed = keys[pygame.K_SPACE]
 
-    # Si estamos en modo de entrada de nombre, mostrar UI y saltar lógica de juego
-    if enter_name_mode:
-        # Dibujar fondo estático
-        screen.blit(background, (0, 0))
-        title = font.render("Ingresa tu nombre (Enter para comenzar):", True, (255, 255, 255))
-        screen.blit(title, (WIDTH//2 - title.get_width()//2, HEIGHT//3))
-        # Caja de texto
-        box_rect = pygame.Rect(WIDTH//2 - 200, HEIGHT//2 - 20, 400, 40)
-        pygame.draw.rect(screen, (30, 30, 30), box_rect)
-        pygame.draw.rect(screen, (255, 255, 255), box_rect, 2)
-        name_surf = font.render(player_name or "", True, (255, 255, 255))
-        screen.blit(name_surf, (box_rect.x + 8, box_rect.y + 6))
+    # MENÚ PRINCIPAL
+    if current_state == MenuState.MAIN_MENU:
+        menu.draw(screen, font)
         pygame.display.flip()
         continue
+    
+    # TIENDA
+    elif current_state == MenuState.SHOP:
+        shop.draw(screen, font)
+        pygame.display.flip()
+        continue
+    
+    # JUEGO EN EJECUCIÓN
+    elif current_state != MenuState.GAME:
+        pygame.display.flip()
+        continue
+    
+    # Crear jugador automáticamente si no existe
+    if current_state == MenuState.GAME and player_id is None:
+        try:
+            player_id = db.add_player("Player")
+        except Exception:
+            player_id = None
 
     # Si el juego NO está terminado, actualizar animaciones y lógica
     if not game.game_over:
@@ -150,6 +168,8 @@ while running:
                     # Guardar puntuación en la base de datos (si está disponible)
                     try:
                         db.add_score(player_id, game.score)
+                        # Agregar anillos como monedas
+                        db.add_rings_as_coins(game.rings_collected)
                     except Exception:
                         pass
                     # Reproducir sonido electrificado si está disponible
@@ -246,6 +266,14 @@ while running:
                 y += 26
         except Exception:
             pass
+        
+        # Actualizar y dibujar botón Quit
+        mouse_pos = pygame.mouse.get_pos()
+        mouse_pressed = pygame.mouse.get_pressed()[0]
+        menu.update_quit_button(mouse_pos)
+        menu.draw_quit_button(screen)
+        
+        # Manejar input
         if keys[pygame.K_r]:
             game.reset()
             player.reset()
@@ -253,6 +281,16 @@ while running:
             rings.clear()
             hearts.clear()
             background_offset = 0
+            current_state = MenuState.MAIN_MENU
+        
+        if menu.is_quit_clicked(mouse_pos, mouse_pressed):
+            game.reset()
+            player.reset()
+            obstacles.clear()
+            rings.clear()
+            hearts.clear()
+            background_offset = 0
+            current_state = MenuState.MAIN_MENU
 
     pygame.display.flip()
 

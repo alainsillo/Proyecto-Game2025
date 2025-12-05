@@ -79,6 +79,17 @@ def add_score(player_id: Optional[int], score: int):
     conn.close()
 
 
+def add_rings_as_coins(rings: int):
+    """Agregar anillos como monedas a las monedas totales del jugador"""
+    try:
+        current_coins = int(get_setting("player_coins", "0"))
+        new_coins = current_coins + rings
+        set_setting("player_coins", str(new_coins))
+        return new_coins
+    except Exception:
+        return 0
+
+
 def get_high_score() -> int:
     conn = get_connection()
     c = conn.cursor()
