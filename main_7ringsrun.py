@@ -1,3 +1,26 @@
+"""
+7 RINGS RUN — Flujo y lógica
+
+Presentación (resumen rápido)
+- Endless runner lateral en 2D con Ariana; objetivo: correr infinito, esquivar obstáculos, recolectar anillos (monedas) y corazones.
+- Estados: MENÚ → TIENDA → JUEGO → GAME OVER → MENÚ.
+- Economía: los anillos recogidos al morir se guardan como monedas persistentes en SQLite para comprar/seleccionar skins.
+
+Algoritmo/flujo principal
+- Bucle de juego (60 FPS): procesa eventos, dibuja según estado y, en modo JUEGO, actualiza mundo y colisiones.
+- Spawns: obstáculos y anillos aparecen con intervalos y patrones; corazones más raros y más frecuentes durante el poder.
+- Colisiones: obstáculos → muerte; anillos → +1 moneda; corazones → progresan hacia poder especial; poder activa invencibilidad y más velocidad.
+- Game Over: muestra botón Quit; R reinicia; al morir se guardan puntaje y anillos→monedas.
+
+Esquema de estados (simplificado)
+MENÚ -> (Play) -> JUEGO -> (muerte) -> GAME OVER -> (Quit/R) -> MENÚ
+    \-> (Shop) -> TIENDA -> (ESC) -> MENÚ
+
+Jugabilidad: cómo ganar / cómo se pierde
+- Ganar: es un endless runner; “ganar” es sobrevivir y maximizar distancia/anillos. No hay final fijo.
+- Perder: chocar con un obstáculo cuando no hay poder activo. Al morir se registra score y se acreditan anillos como monedas.
+"""
+
 import pygame
 from modules.player import Player
 from modules.obstacle import Obstacle
