@@ -30,6 +30,9 @@ class Shop:
             Skin("Próximamente", 1000, "diamond"),
         ]
         
+        # Cargar sprites de preview (UP) para cada skin
+        self.skin_previews = self._load_skin_previews()
+        
         # Cargar dinero del jugador desde la BD
         self.coins = self.load_coins()
         # Skin seleccionado
@@ -72,6 +75,29 @@ class Shop:
             if s.key == skin_key:
                 return i
         return 0
+    
+    def _load_skin_previews(self):
+        """Cargar sprite UP de cada skin para mostrar en la tienda."""
+        previews = []
+        for skin in self.skins:
+            prefix = "ariana_original"
+            if skin.key == "dangerous_woman":
+                prefix = "ariana_dw"
+            elif skin.key == "pink":
+                prefix = "ariana_pink"
+            elif skin.key == "diamond":
+                prefix = "ariana_diamond"
+            
+            try:
+                img = pygame.image.load(f"assets/images/{prefix}_up.png").convert_alpha()
+                img = pygame.transform.scale(img, (80, 80))
+                previews.append(img)
+            except Exception:
+                # Fallback: cuadro gris si no existe el sprite
+                fallback = pygame.Surface((80, 80))
+                fallback.fill((100, 100, 100))
+                previews.append(fallback)
+        return previews
     
     def buy_skin(self, skin_index):
         """Intentar comprar un skin"""
@@ -131,7 +157,7 @@ class Shop:
         coins_text = font.render(f"Monedas: {self.coins}", True, (255, 215, 0))
         screen.blit(coins_text, (20, 20))
         
-        # Mostrar skins disponibles
+        # Mostrar skins disponibles con preview
         y = 80
         for i, skin in enumerate(self.skins):
             selected = (i == self.selected_index)
@@ -139,9 +165,15 @@ class Shop:
             status = "DESBLOQUEADO" if skin.unlocked else f"${skin.cost}"
             if selected:
                 status = "SELECCIONADA" if skin.unlocked else status
+            
+            # Dibujar sprite preview
+            if i < len(self.skin_previews):
+                screen.blit(self.skin_previews[i], (50, y))
+            
+            # Texto del skin (desplazado a la derecha del preview)
             skin_text = font.render(f"{i+1}. {skin.name} - {status}", True, color)
-            screen.blit(skin_text, (50, y))
-            y += 40
+            screen.blit(skin_text, (150, y + 30))
+            y += 100
         
         # Instrucciones
         instructions = font.render("Presiona 1-4 para comprar/seleccionar, ESC para volver", True, (200, 200, 200))
