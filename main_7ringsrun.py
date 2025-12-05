@@ -62,6 +62,12 @@ menu = Menu(WIDTH, HEIGHT)
 shop = Shop(WIDTH, HEIGHT)
 current_state = MenuState.MAIN_MENU
 
+# Aplicar skin seleccionado al jugador
+try:
+    player.set_skin(shop.get_selected_skin_key())
+except Exception:
+    pass
+
 # Musica
 pygame.mixer.music.load("assets/sounds/music.mp3")
 pygame.mixer.music.play(-1)
@@ -96,11 +102,29 @@ while running:
             new_state = menu.handle_events([event], mouse_pos, mouse_pressed)
             if new_state != current_state:
                 current_state = new_state
+                if current_state == MenuState.SHOP:
+                    # Refrescar monedas al entrar a la tienda
+                    try:
+                        shop.coins = shop.load_coins()
+                    except Exception:
+                        pass
         
         # Manejar tienda
         elif current_state == MenuState.SHOP:
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
-                current_state = MenuState.MAIN_MENU
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    current_state = MenuState.MAIN_MENU
+                # Selección/compra de skins con teclas numéricas 1-9
+                if pygame.K_1 <= event.key <= pygame.K_9:
+                    idx = event.key - pygame.K_1
+                    ok, msg = shop.select_or_buy(idx)
+                    if msg:
+                        shop.set_message(msg)
+                    if ok:
+                        try:
+                            player.set_skin(shop.get_selected_skin_key())
+                        except Exception:
+                            pass
 
     # Entradas
     keys = pygame.key.get_pressed()
@@ -168,8 +192,9 @@ while running:
                     # Guardar puntuación en la base de datos (si está disponible)
                     try:
                         db.add_score(player_id, game.score)
-                        # Agregar anillos como monedas
-                        db.add_rings_as_coins(game.rings_collected)
+                        # Agregar anillos como monedas y actualizar tienda
+                        new_coins = db.add_rings_as_coins(game.rings_collected)
+                        shop.coins = new_coins
                     except Exception:
                         pass
                     # Reproducir sonido electrificado si está disponible
@@ -253,19 +278,6 @@ while running:
     if game.game_over:
         text = font.render(" Game Over - Presiona R para reiniciar", True, (255, 255, 255))
         screen.blit(text, (WIDTH/2 - 200, HEIGHT/2))
-        # Mostrar top scores
-        try:
-            top = db.get_top_scores(5)
-            y = HEIGHT//2 + 40
-            header = font.render("Top 5:", True, (255, 215, 0))
-            screen.blit(header, (WIDTH//2 - 200, y))
-            y += 30
-            for score, name, created in top:
-                line = font.render(f"{name or 'Player'} - {score}", True, (255, 255, 255))
-                screen.blit(line, (WIDTH//2 - 200, y))
-                y += 26
-        except Exception:
-            pass
         
         # Actualizar y dibujar botón Quit
         mouse_pos = pygame.mouse.get_pos()

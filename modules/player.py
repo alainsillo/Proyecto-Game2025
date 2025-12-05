@@ -2,21 +2,9 @@ import pygame
 
 class Player:
     def __init__(self):
-        # Cargar sprites para estados: jugando (up), volando (fly), muerto (dead) y caído (down)
-        self.image_up = pygame.image.load("assets/images/ariana_original_up.png").convert_alpha()
-        self.image_up = pygame.transform.scale(self.image_up, (60, 60))
-        self.image_fly = pygame.image.load("assets/images/ariana_original_fly.png").convert_alpha()
-        self.image_fly = pygame.transform.scale(self.image_fly, (60, 60))
-        self.image_down = pygame.image.load("assets/images/ariana_original_down.png").convert_alpha()
-        self.image_down = pygame.transform.scale(self.image_down, (60, 60))
-        # imagen intermedia de muerte (efecto electrificado) — opcional
-        try:
-            self.image_dead = pygame.image.load("assets/images/ariana_original_dead.png").convert_alpha()
-            self.image_dead = pygame.transform.scale(self.image_dead, (60, 60))
-        except Exception:
-            self.image_dead = None
-
-        self.image = self.image_up
+        self.current_skin = "original"
+        # Cargar sprites por skin (se inicializa con la original)
+        self._load_skin(self.current_skin)
         self.rect = self.image.get_rect()
         self.rect.x = 100
         self.rect.y = 480  # Posición inicial más baja
@@ -113,3 +101,32 @@ class Player:
         # Volver al sprite vivo
         self.image = self.image_up
         self.dead = False
+
+    def _load_skin(self, skin_key: str):
+        """Cargar sprites según el skin seleccionado."""
+        prefix = "ariana_original"
+        if skin_key == "dangerous_woman":
+            prefix = "ariana_dw"
+
+        def load_scaled(path):
+            img = pygame.image.load(path).convert_alpha()
+            return pygame.transform.scale(img, (60, 60))
+
+        self.image_up = load_scaled(f"assets/images/{prefix}_up.png")
+        self.image_fly = load_scaled(f"assets/images/{prefix}_fly.png")
+        self.image_down = load_scaled(f"assets/images/{prefix}_down.png")
+        try:
+            self.image_dead = load_scaled(f"assets/images/{prefix}_dead.png")
+        except Exception:
+            self.image_dead = None
+        self.image = self.image_up
+
+    def set_skin(self, skin_key: str):
+        """Aplicar un skin (cambia sprites al vuelo)."""
+        if skin_key != self.current_skin:
+            try:
+                self._load_skin(skin_key)
+                self.current_skin = skin_key
+            except Exception:
+                # Si falla la carga, mantener el skin actual
+                pass
