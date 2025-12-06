@@ -1,5 +1,6 @@
 # 7 RINGS RUN
 Endless runner 2D hecho en **Pygame**. Controlas a Ariana, esquivas obstáculos, recolectas anillos (monedas) y corazones, activas el poder especial y compras/seleccionas skins.
+<img width="1024" height="680" alt="LOGO_7RINGS_RUN" src="https://github.com/user-attachments/assets/984d1189-8437-4cad-9329-51366ba90751" />
 
 ## Requisitos
 - Python 3.10+ (recomendado)
